@@ -56,16 +56,22 @@ export default async function handler(req, res) {
   const { url } = req.body || req.query;
 
   if (!url) {
-    return res.status(400).json({ error: 'URL parameter is required' });
-  }
+  return res.status(400).json({
+    success: false,
+    error: 'URL parameter is required'
+  });
+} 
 
   try {
     const scraper = new DownrScraper();
     const data = await scraper.fetch(url);
 
     if (!data || !data.medias || data.medias.length === 0) {
-      return res.status(404).json({ error: 'Media tidak ditemukan atau URL tidak didukung.' });
-    }
+  return res.status(404).json({
+    success: false,
+    error: 'Media tidak ditemukan atau URL tidak didukung.'
+  });
+}
 
     return res.status(200).json({
       success: true,
@@ -75,6 +81,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Terjadi kesalahan pada server.' });
+    return res.status(500).json({
+  success: false,
+  error: 'Terjadi kesalahan pada server.' 
+    });
   }
 }
