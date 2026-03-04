@@ -17,15 +17,24 @@ async function fetchMedia() {
     errorCard.classList.add('hidden');
 
     try {
-        const response = await fetch('/api/index', {
+        // ✅ FIX: endpoint Vercel yang benar adalah /api
+        const response = await fetch('/api', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url })
         });
 
+        // ✅ Cek status dulu
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Server response:', text);
+            throw new Error(`Server error (${response.status})`);
+        }
+
+        // ✅ Parse JSON dengan aman
         const json = await response.json();
 
-        if (!response.ok || !json.success) {
+        if (!json.success) {
             throw new Error(json.error || 'Media tidak ditemukan / Link Invalid.');
         }
 
@@ -40,17 +49,18 @@ async function fetchMedia() {
     }
 }
 
-// UPDATE: Render HTML yang lebih "RAME"
+// Render Result
 function renderResult(medias) {
     const resultDiv = document.getElementById('result');
 
     medias.forEach((media, index) => {
         const card = document.createElement('div');
         card.className = 'cyber-card result-card';
-        // Animasi muncul
+
         card.style.opacity = '0';
         card.style.transform = 'translateY(30px)';
         card.style.transition = 'all 0.4s ease';
+
         setTimeout(() => {
             card.style.opacity = '1';
             card.style.transform = 'translateY(0)';
@@ -59,14 +69,14 @@ function renderResult(medias) {
         let typeTitle = 'MEDIA_FILE';
         let mediaPreview = '';
         const ext = media.extension || 'mp4';
-        const filename = `Partner-KACE_DL_${Date.now()}_${index}.${ext}`;
+        const filename = `Sann404_DL_${Date.now()}_${index}.${ext}`;
 
         if (media.type === 'video') {
             typeTitle = `VIDEO_DATA [${media.quality || 'HD'}]`;
             mediaPreview = `
                 <div style="background:#000; padding:5px; border:2px solid #000;">
                     <video controls poster="${media.thumbnail || ''}" playsinline style="border:none; margin:0;">
-                        <source src="${media.url}" type="video/mp4">
+                        <source src="${media.url}" type="video/${ext}">
                     </video>
                 </div>`;
         } else if (media.type === 'image') {
@@ -88,7 +98,8 @@ function renderResult(medias) {
                     > FILENAME: ${filename} <br>
                     > SIZE: UNKNOWN
                 </div>
-                <button class="cyber-button" style="background: var(--accent-tertiary); color:white; border-color:black;"
+                <button class="cyber-button"
+                    style="background: var(--accent-tertiary); color:white; border-color:black;"
                     onclick="forceDownload('${media.url}', '${filename}', this)">
                     DOWNLOAD NOW
                 </button>
@@ -99,7 +110,7 @@ function renderResult(medias) {
     });
 }
 
-// Function Force Direct Download (TIDAK BERUBAH)
+// Force Download
 async function forceDownload(url, filename, btnElement) {
     const originalText = btnElement.innerText;
     btnElement.innerText = "DOWNLOADING...";
@@ -108,24 +119,23 @@ async function forceDownload(url, filename, btnElement) {
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error("Network error");
-        
+
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
-        
+
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = blobUrl;
         a.download = filename;
         document.body.appendChild(a);
-        
         a.click();
-        
+
         window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(a);
 
     } catch (e) {
         console.error("Direct download failed, opening in new tab", e);
-        window.location.href = url; 
+        window.location.href = url;
     } finally {
         btnElement.innerText = "COMPLETED";
         setTimeout(() => {
@@ -133,4 +143,4 @@ async function forceDownload(url, filename, btnElement) {
             btnElement.disabled = false;
         }, 2000);
     }
-}
+            }
